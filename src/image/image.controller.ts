@@ -31,7 +31,6 @@ export class ImageController {
   ) {
     const userId = (req.user as JwtUserPayload)?.id;
     const session = await this.imageService.createUploadSession(userId);
-    console.log("UserID:", userId);
     for (const file of files) {
       await new Promise((res) => setTimeout(res, 1000)); // simulate delay
       await this.imageService.addImage(session.id, file, userId);
@@ -40,7 +39,6 @@ export class ImageController {
     return { message: "Images uploaded successfully!" };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async getImages(
     @Query("cursor") cursor?: string,
