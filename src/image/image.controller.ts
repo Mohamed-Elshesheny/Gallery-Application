@@ -5,36 +5,26 @@ import {
   Query,
   UploadedFiles,
   UseInterceptors,
+  Body,
 } from "@nestjs/common";
 import { ImageService } from "./image.service";
 import { FilesInterceptor } from "@nestjs/platform-express";
-import { diskStorage } from "multer";
-import { v4 as uuid } from "uuid";
-import * as path from "path";
 
 @Controller("images")
 export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
   @Post("upload")
-  @UseInterceptors(
-    FilesInterceptor("images", 10, {
-      storage: diskStorage({
-        destination: "./uploads",
-        filename: (req, file, cb) => {
-          const ext = path.extname(file.originalname);
-          const filename = `${uuid()}${ext}`;
-          cb(null, filename);
-        },
-      }),
-    })
-  )
-  async uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
-    const session = await this.imageService.createUploadSession();
+  @UseInterceptors(FilesInterceptor("images", 10))
+  async uploadImages(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body("userId") userId: number
+  ) {
+    const session = await this.imageService.createUploadSession(userId);
 
     for (const file of files) {
       await new Promise((res) => setTimeout(res, 1000)); // simulate delay
-      await this.imageService.addImage(session.id, file);
+      await this.imageService.addImage(session.id, file, userId);
     }
 
     return { message: "Images uploaded successfully!" };
@@ -49,7 +39,7 @@ export class ImageController {
     @Query("sortOrder") sortOrder: "asc" | "desc" = "asc"
   ) {
     const data = await this.imageService.getImages({
-      cursor,
+      cursor: cursor ? Number(cursor) : undefined,
       limit,
       filter,
       sortBy,

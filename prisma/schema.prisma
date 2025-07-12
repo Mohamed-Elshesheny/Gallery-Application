@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   email          String          @unique
   password       String
   uploadSessions UploadSession[]
@@ -30,8 +30,8 @@ model Image {
   fileName    String
   size        Int
   uploadedAt  DateTime @default(now())
-  userId      Int
+  userId      Int?
   sessionId   Int
-  user        User     @relation("UserImages", fields: [userId], references: [id])
+  user        User?    @relation("UserImages", fields: [userId], references: [id])
   session     UploadSession @relation(fields: [sessionId], references: [id])
 }

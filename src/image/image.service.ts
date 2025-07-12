@@ -12,24 +12,25 @@ export class ImageService {
     private storage: CloudStorageService
   ) {}
 
-  async createUploadSession() {
+  async createUploadSession(userId?: number) {
     return this.prisma.uploadSession.create({
-      data: {},
+      data: { userId },
     });
   }
 
   async addImage(
-    sessionId: string,
-    image: { originalname: string; buffer: Buffer; size: number }
+    sessionId: number,
+    image: { originalname: string; buffer: Buffer; size: number },
+    userId?: number
   ): Promise<Image> {
     this.gateway.emitProgress(
-      sessionId,
+      sessionId.toString(),
       image.originalname,
       "processing-started"
     );
     await new Promise((resolve) => setTimeout(resolve, 2000));
     this.gateway.emitProgress(
-      sessionId,
+      sessionId.toString(),
       image.originalname,
       "processing-completed"
     );
@@ -38,7 +39,7 @@ export class ImageService {
       image.originalname
     );
     this.gateway.emitProgress(
-      sessionId,
+      sessionId.toString(),
       image.originalname,
       "upload-completed"
     );
@@ -48,17 +49,18 @@ export class ImageService {
         url: imageUrl,
         size: image.size,
         sessionId,
+        userId,
       },
     });
   }
 
   async getImages(params: {
-    cursor?: string;
+    cursor?: number;
     limit?: number | string;
     filter?: string;
     sortBy?: "uploadedAt" | "fileName";
     sortOrder?: "asc" | "desc";
-  }): Promise<{ images: Image[]; nextCursor: string | null }> {
+  }): Promise<{ images: Image[]; nextCursor: number | null }> {
     const {
       cursor,
       limit = 10,
