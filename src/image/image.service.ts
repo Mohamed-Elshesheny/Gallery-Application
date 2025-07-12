@@ -21,8 +21,9 @@ export class ImageService {
   async addImage(
     sessionId: number,
     image: { originalname: string; buffer: Buffer; size: number },
-    userId?: number
+    userId: number
   ): Promise<Image> {
+    if (!userId) throw new Error("userId is required to upload image");
     this.gateway.emitProgress(
       sessionId.toString(),
       image.originalname,
@@ -85,6 +86,14 @@ export class ImageService {
       }),
       orderBy: {
         [sortBy]: sortOrder,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
     });
 

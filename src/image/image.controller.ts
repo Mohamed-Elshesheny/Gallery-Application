@@ -5,23 +5,33 @@ import {
   Query,
   UploadedFiles,
   UseInterceptors,
-  Body,
+  Req,
+  UseGuards,
 } from "@nestjs/common";
+import { Request } from "express";
 import { ImageService } from "./image.service";
 import { FilesInterceptor } from "@nestjs/platform-express";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard"; // <-- عدل هنا
+
+interface JwtUserPayload {
+  id: number;
+  email?: string;
+}
 
 @Controller("images")
 export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post("upload")
   @UseInterceptors(FilesInterceptor("images", 10))
   async uploadImages(
     @UploadedFiles() files: Express.Multer.File[],
-    @Body("userId") userId: number
+    @Req() req: Request
   ) {
+    const userId = (req.user as JwtUserPayload)?.id;
     const session = await this.imageService.createUploadSession(userId);
-
+    console.log("UserID:", userId);
     for (const file of files) {
       await new Promise((res) => setTimeout(res, 1000)); // simulate delay
       await this.imageService.addImage(session.id, file, userId);
@@ -30,6 +40,7 @@ export class ImageController {
     return { message: "Images uploaded successfully!" };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getImages(
     @Query("cursor") cursor?: string,
